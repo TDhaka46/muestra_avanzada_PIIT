@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SATELLITE-TRACK · Mantenimiento Predictivo de Flota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+:root{
+  /* Fondos */
+  --bg-canvas:#080e1a; --bg-base:#0c1422; --bg-surface:#101c2e;
+  --bg-raised:#142035; --bg-overlay:#192840; --bg-hover:#1e3049;
+  /* Bordes */
+  --border-s:rgba(255,255,255,0.06); --border-d:rgba(255,255,255,0.10); --border-b:rgba(255,255,255,0.16);
+  /* Acento */
+  --accent:#2563eb; --accent-l:#3b82f6; --accent-m:rgba(37,99,235,0.12);
+  /* Semáforo */
+  --crit:#f43f5e; --warn:#f59e0b; --ok:#10b981; --info:#06b6d4; --violet:#8b5cf6;
+  --crit-bg:rgba(244,63,94,0.10); --crit-br:rgba(244,63,94,0.28);
+  --warn-bg:rgba(245,158,11,0.10); --warn-br:rgba(245,158,11,0.28);
+  --ok-bg:rgba(16,185,129,0.10);  --ok-br:rgba(16,185,129,0.28);
+  --info-bg:rgba(6,182,212,0.10);  --info-br:rgba(6,182,212,0.28);
+  --violet-bg:rgba(139,92,246,0.10); --violet-br:rgba(139,92,246,0.28);
+  /* Texto */
+  --tx1:#f0f4ff; --tx2:#8fa3c0; --tx3:#4d6480; --tx4:#2d4060;
+  /* Radios */
+  --r-sm:4px; --r-md:6px; --r-lg:10px; --r-xl:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg-canvas); color:var(--tx1);
+  font-size:13px; line-height:1.45; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--border-b);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== TOPBAR ===== */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:46px;z-index:60;
+  background:var(--bg-surface);border-bottom:1px solid var(--border-d);
+  display:flex;align-items:center;gap:14px;padding:0 16px;
+}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.4px;font-size:13px}
+.logo i{color:var(--accent-l);font-size:19px}
+.logo b{color:var(--accent-l)}
+.topbar .sep{width:1px;height:22px;background:var(--border-d)}
+.topbar .env{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--violet);
+  background:var(--violet-bg);border:1px solid var(--violet-br);padding:3px 7px;border-radius:var(--r-sm)}
+.topbar .spacer{flex:1}
+.topbar .tb-item{display:flex;align-items:center;gap:6px;color:var(--tx2);font-size:11px}
+.topbar .tb-item i{font-size:15px}
+.tb-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 7px var(--ok)}
+.tb-user{display:flex;align-items:center;gap:8px;background:var(--bg-raised);
+  border:1px solid var(--border-d);padding:4px 10px 4px 4px;border-radius:20px}
+.tb-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--violet));
+  display:grid;place-items:center;font-size:10px;font-weight:700}
+
+/* ===== SIDEBAR ===== */
+.sidebar{
+  position:fixed;left:0;top:46px;bottom:0;width:56px;z-index:50;
+  background:var(--bg-surface);border-right:1px solid var(--border-d);
+  display:flex;flex-direction:column;padding:10px 0;gap:4px;
+  transition:width .18s ease;overflow:hidden;
+}
+.sidebar:hover{width:200px}
+.nav-item{display:flex;align-items:center;gap:14px;height:40px;padding:0 18px;
+  color:var(--tx2);white-space:nowrap;position:relative;transition:.12s}
+.nav-item i{font-size:20px;min-width:20px}
+.nav-item span{font-size:12px;font-weight:500;opacity:0;transition:opacity .15s}
+.sidebar:hover .nav-item span{opacity:1}
+.nav-item:hover{background:var(--bg-hover);color:var(--tx1)}
+.nav-item.active{color:var(--accent-l)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;
+  background:var(--accent-l);border-radius:0 3px 3px 0}
+.sidebar .nav-foot{margin-top:auto}
+
+/* ===== MAIN ===== */
+.main{margin-top:46px;margin-left:56px;margin-bottom:26px;height:calc(100vh - 72px);
+  overflow-y:auto;transition:margin-right .2s ease;padding:18px 20px 30px}
+body.console-open .main{margin-right:340px}
+.page{display:none}
+.page.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* page header */
+.page-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.page-head h1{font-size:17px;font-weight:700;letter-spacing:.2px}
+.page-head .sub{color:var(--tx2);font-size:11px}
+.page-head .spacer{flex:1}
+.btn-back{display:flex;align-items:center;gap:6px;background:var(--bg-raised);
+  border:1px solid var(--border-d);padding:7px 12px;border-radius:var(--r-md);
+  color:var(--tx2);font-size:11px;font-weight:500}
+.btn-back:hover{background:var(--bg-hover);color:var(--tx1)}
+
+/* ===== KPI CARDS ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{position:relative;background:var(--bg-surface);border:1px solid var(--border-d);
+  border-radius:var(--r-lg);padding:15px 16px;overflow:hidden}
+.kpi::after{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.kpi.k-crit::after{background:var(--crit)} .kpi.k-ok::after{background:var(--ok)} .kpi.k-violet::after{background:var(--violet)}
+.kpi .kl{display:flex;align-items:center;gap:7px;color:var(--tx2);font-size:10px;
+  font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px}
+.kpi .kl i{font-size:15px}
+.kpi .kv{font-size:26px;font-weight:700;line-height:1}
+.kpi .kv small{font-size:13px;color:var(--tx2);font-weight:500}
+.kpi .kt{font-size:10px;color:var(--tx3);margin-top:7px;display:flex;align-items:center;gap:4px}
+.kpi .kt .up{color:var(--ok)} .kpi .kt .down{color:var(--crit)}
+
+/* ===== GRID 2 COL ===== */
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:14px}
+.card{background:var(--bg-surface);border:1px solid var(--border-d);border-radius:var(--r-lg);overflow:hidden}
+.card-head{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--border-s)}
+.card-head h3{font-size:12px;font-weight:600;letter-spacing:.3px}
+.card-head i{font-size:16px;color:var(--tx2)}
+.card-head .spacer{flex:1}
+.card-head .meta{font-size:10px;color:var(--tx3)}
+.badge-ai{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;
+  letter-spacing:.3px;color:var(--violet);background:var(--violet-bg);border:1px solid var(--violet-br);
+  padding:3px 7px;border-radius:var(--r-sm)}
+.badge-ai i{font-size:11px}
+
+/* ===== FLEET TABLE ===== */
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--tx3);padding:9px 14px;border-bottom:1px solid var(--border-d);background:var(--bg-base)}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border-s);font-size:12px;position:relative}
+tbody tr:hover{background:var(--bg-hover)}
+tbody tr.crit td:first-child::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--crit)}
+tbody tr.warn td:first-child::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--warn)}
+.veh-id{display:flex;align-items:center;gap:9px}
+.veh-icon{width:30px;height:30px;border-radius:var(--r-md);background:var(--bg-raised);
+  border:1px solid var(--border-d);display:grid;place-items:center;font-size:16px;color:var(--tx2)}
+.veh-id .id{font-weight:700;font-size:12px}
+.veh-id .err{font-size:8px;font-weight:700;letter-spacing:.3px;color:var(--crit);
+  background:var(--crit-bg);border:1px solid var(--crit-br);padding:2px 5px;border-radius:var(--r-sm);margin-left:2px}
+.veh-id .err.ot{color:var(--info);background:var(--info-bg);border-color:var(--info-br)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;
+  padding:4px 10px;border-radius:20px;letter-spacing:.3px}
+.pill .d{width:7px;height:7px;border-radius:50%}
+.pill.crit{color:var(--crit);background:var(--crit-bg);border:1px solid var(--crit-br)} .pill.crit .d{background:var(--crit);box-shadow:0 0 6px var(--crit)}
+.pill.warn{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-br)} .pill.warn .d{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+.pill.ok{color:var(--ok);background:var(--ok-bg);border:1px solid var(--ok-br)} .pill.ok .d{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.pill.info{color:var(--info);background:var(--info-bg);border:1px solid var(--info-br)} .pill.info .d{background:var(--info);box-shadow:0 0 6px var(--info)}
+.rul-cell{display:flex;align-items:center;gap:9px}
+.rul-cell .h{font-weight:700;font-size:12px;min-width:34px}
+.rul-bar{flex:1;height:5px;background:var(--bg-base);border-radius:3px;overflow:hidden;max-width:80px}
+.rul-bar i{display:block;height:100%;border-radius:3px;transition:width .5s}
+.prio{font-size:10px;font-weight:700;letter-spacing:.3px;padding:3px 8px;border-radius:var(--r-sm)}
+.prio.P1{color:var(--crit);background:var(--crit-bg)} .prio.P2{color:var(--warn);background:var(--warn-bg)} .prio.P3{color:var(--tx2);background:var(--bg-raised)}
+.act-btns{display:flex;gap:6px}
+.act-btns button{width:28px;height:28px;border-radius:var(--r-md);background:var(--bg-raised);
+  border:1px solid var(--border-d);color:var(--tx2);display:grid;place-items:center;font-size:15px;transition:.12s}
+.act-btns button:hover:not(:disabled){background:var(--accent-m);color:var(--accent-l);border-color:var(--accent)}
+.act-btns button.see{color:var(--accent-l);border-color:var(--accent-br,var(--accent))}
+.act-btns button:disabled{opacity:.3;cursor:not-allowed}
+
+/* ===== RIGHT PANEL ===== */
+.chart{padding:14px 16px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:140px;margin-bottom:6px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bar{width:100%;max-width:26px;border-radius:4px 4px 0 0;transition:height .6s ease;min-height:4px;position:relative}
+.bar-col .bl{font-size:8px;color:var(--tx3);white-space:nowrap}
+.bar-col .bv{font-size:8px;font-weight:700;color:var(--tx2)}
+.fleet-status{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.fs-row .fs-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px}
+.fs-row .fs-top b{font-weight:700}
+.fs-bar{height:6px;background:var(--bg-base);border-radius:3px;overflow:hidden}
+.fs-bar i{display:block;height:100%;border-radius:3px}
+/* events */
+.events{padding:8px 0;max-height:280px;overflow-y:auto}
+.ev{display:flex;gap:11px;padding:10px 16px;border-bottom:1px solid var(--border-s)}
+.ev .ev-ic{width:30px;height:30px;border-radius:var(--r-md);display:grid;place-items:center;font-size:15px;flex-shrink:0}
+.ev.crit .ev-ic{color:var(--crit);background:var(--crit-bg)} .ev.warn .ev-ic{color:var(--warn);background:var(--warn-bg)}
+.ev.ok .ev-ic{color:var(--ok);background:var(--ok-bg)} .ev.info .ev-ic{color:var(--info);background:var(--info-bg)}
+.ev .ev-body{flex:1;min-width:0}
+.ev .ev-t{font-size:11px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ev .ev-d{font-size:10px;color:var(--tx2);margin-top:3px}
+.ev .ev-time{font-size:9px;color:var(--tx3);margin-top:4px}
+
+/* ===== STATUSBAR ===== */
+.statusbar{position:fixed;bottom:0;left:56px;right:0;height:26px;z-index:40;
+  background:var(--bg-surface);border-top:1px solid var(--border-d);
+  display:flex;align-items:center;gap:16px;padding:0 16px;font-size:10px;color:var(--tx3);transition:right .2s}
+body.console-open .statusbar{right:340px}
+.statusbar .si{display:flex;align-items:center;gap:5px}
+.statusbar .si i{font-size:12px}
+.statusbar .spacer{flex:1}
+
+/* ===== FAB ===== */
+.fab{position:fixed;right:22px;bottom:42px;z-index:55;display:flex;align-items:center;gap:9px;
+  background:var(--accent);color:#fff;padding:11px 17px;border-radius:24px;font-size:12px;font-weight:600;
+  box-shadow:0 6px 22px rgba(37,99,235,.4);transition:.15s}
+.fab:hover{background:var(--accent-l);transform:translateY(-1px)}
+.fab i{font-size:17px}
+body.console-open .fab{display:none}
+
+/* ===== TELEMETRY CONSOLE PANEL ===== */
+.tc-panel{position:fixed;right:0;top:46px;bottom:26px;width:340px;z-index:45;
+  background:var(--bg-base);border-left:1px solid var(--border-d);
+  transform:translateX(100%);transition:transform .22s ease;display:flex;flex-direction:column}
+body.console-open .tc-panel{transform:none}
+.tc-head{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--border-d);background:var(--bg-surface)}
+.tc-head i.lead{font-size:17px;color:var(--violet)}
+.tc-head h3{font-size:12px;font-weight:600;flex:1}
+.tc-head button{width:26px;height:26px;border-radius:var(--r-md);color:var(--tx2);font-size:16px;display:grid;place-items:center}
+.tc-head button:hover{background:var(--bg-hover);color:var(--tx1)}
+.tc-body{flex:1;overflow-y:auto;padding:14px 15px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--tx3);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg-surface);border:1px solid var(--border-d);
+  border-radius:var(--r-md);padding:8px 10px;color:var(--tx1);font-size:12px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field .row{display:flex;gap:8px}
+.ec-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ec{background:var(--bg-surface);border:1px solid var(--border-d);border-radius:var(--r-md);padding:7px 9px;text-align:left;transition:.12s}
+.ec .c{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.ec .dsc{font-size:9px;color:var(--tx3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ec.sel{border-color:var(--accent);background:var(--accent-m)}
+.ec.sel .c{color:var(--accent-l)}
+.ec .dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px}
+.ec.crit .dot{background:var(--crit)} .ec.warn .dot{background:var(--warn)}
+.sev-btns{display:flex;gap:7px}
+.sev-btn{flex:1;padding:8px;border-radius:var(--r-md);border:1px solid var(--border-d);background:var(--bg-surface);
+  font-size:10px;font-weight:700;letter-spacing:.3px;color:var(--tx2);transition:.12s}
+.sev-btn.crit.on{color:var(--crit);background:var(--crit-bg);border-color:var(--crit-br)}
+.sev-btn.warn.on{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-br)}
+.sev-btn.ok.on{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-br)}
+.tc-inject{width:100%;background:var(--accent);color:#fff;padding:11px;border-radius:var(--r-md);
+  font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:4px}
+.tc-inject:hover{background:var(--accent-l)}
+.tc-inject i{font-size:16px}
+/* log terminal */
+.tc-log{border-top:1px solid var(--border-d);background:#05090f;padding:10px 13px;height:140px;overflow-y:auto;
+  font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.6}
+.tc-log .lh{display:flex;align-items:center;gap:6px;color:var(--tx3);margin-bottom:6px;font-size:8px;letter-spacing:.5px}
+.tc-log .lh button{margin-left:auto;color:var(--tx3);font-size:9px}
+.log-line{white-space:nowrap}
+.log-line.in{color:var(--ok)} .log-line.warn{color:var(--warn)} .log-line.err{color:var(--crit)} .log-line.sys{color:var(--tx3)}
+.log-line .ts{color:var(--tx4);margin-right:7px}
+
+/* ===== CONSOLE PRESCRIPTIVA ===== */
+.timeline{display:flex;gap:0;padding:18px 20px;overflow-x:auto}
+.tl-step{flex:1;min-width:90px;position:relative;text-align:center;padding-top:26px}
+.tl-step::before{content:'';position:absolute;top:9px;left:50%;right:-50%;height:2px;background:var(--border-d)}
+.tl-step:last-child::before{display:none}
+.tl-step.done::before{background:var(--ok)}
+.tl-dot{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;
+  background:var(--bg-raised);border:2px solid var(--border-b);z-index:2;display:grid;place-items:center;font-size:9px;color:var(--tx3)}
+.tl-step.done .tl-dot{background:var(--ok);border-color:var(--ok);color:#04140d}
+.tl-step.active .tl-dot{background:var(--accent);border-color:var(--accent-l);color:#fff;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,.5)}50%{box-shadow:0 0 0 7px rgba(37,99,235,0)}}
+.tl-step .tl-l{font-size:9px;color:var(--tx3);font-weight:500}
+.tl-step.done .tl-l,.tl-step.active .tl-l{color:var(--tx1)}
+.cons-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:13px 16px;padding:15px 16px}
+.dl .di .dk{font-size:9px;color:var(--tx3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px}
+.dl .di .dv{font-size:13px;font-weight:600}
+.dl .di .dv.mono{font-family:'JetBrains Mono',monospace}
+.conf{padding:0 16px 15px}
+.conf .ct{display:flex;justify-content:space-between;font-size:10px;color:var(--tx2);margin-bottom:6px}
+.conf .ct b{color:var(--violet);font-weight:700;font-size:13px}
+.conf-bar{height:7px;background:var(--bg-base);border-radius:4px;overflow:hidden}
+.conf-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--accent-l));border-radius:4px;animation:grow 1.2s ease}
+@keyframes grow{from{width:0}}
+.conn-pill{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;color:var(--ok);
+  background:var(--ok-bg);border:1px solid var(--ok-br);padding:3px 8px;border-radius:20px}
+.conn-pill .d{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.mat-table td,.mat-table th{font-size:11px}
+.alert-box{margin:14px 16px;padding:12px 14px;border-radius:var(--r-md);background:var(--crit-bg);
+  border:1px solid var(--crit-br);display:flex;gap:10px;font-size:11px;color:#ffd5dc}
+.alert-box i{font-size:18px;color:var(--crit);flex-shrink:0}
+.info-box{margin:0 16px 14px;padding:10px 14px;border-radius:var(--r-md);background:var(--accent-m);
+  border:1px solid var(--border-d);font-size:10px;color:var(--tx2);display:flex;gap:9px}
+.info-box i{color:var(--accent-l);font-size:15px}
+.proto-actions{display:flex;gap:10px;padding:0 16px 16px}
+.btn{padding:10px 16px;border-radius:var(--r-md);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;transition:.14s}
+.btn i{font-size:16px}
+.btn.primary{background:var(--accent);color:#fff;flex:1}
+.btn.primary:hover{background:var(--accent-l)}
+.btn.danger{background:var(--crit);color:#fff;flex:1}
+.btn.danger:hover{filter:brightness(1.1)}
+.btn.ghost{background:var(--bg-raised);border:1px solid var(--border-d);color:var(--tx2)}
+.btn.ghost:hover{background:var(--bg-hover);color:var(--tx1)}
+
+/* ===== RECONFIG ===== */
+.asset-card{display:flex;align-items:center;gap:16px;padding:18px;margin-bottom:16px}
+.asset-card .a-icon{width:52px;height:52px;border-radius:var(--r-lg);background:var(--bg-raised);
+  border:1px solid var(--border-d);display:grid;place-items:center;font-size:26px;color:var(--accent-l)}
+.asset-card .a-info h2{font-size:18px;font-weight:700}
+.asset-card .a-info .a-sub{font-size:11px;color:var(--tx2);margin-top:3px}
+.asset-card .a-stats{margin-left:auto;display:flex;gap:24px}
+.asset-card .a-stat .sk{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px}
+.asset-card .a-stat .sv{font-size:17px;font-weight:700;margin-top:3px}
+.prio-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.prio-opt{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg-surface);
+  border:1px solid var(--border-d);border-radius:var(--r-lg);cursor:pointer;transition:.14s}
+.prio-opt:hover{border-color:var(--border-b)}
+.prio-opt.sel{border-color:var(--accent);background:var(--accent-m)}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--border-b);flex-shrink:0;display:grid;place-items:center}
+.prio-opt.sel .radio{border-color:var(--accent-l)}
+.prio-opt.sel .radio::after{content:'';width:10px;height:10px;border-radius:50%;background:var(--accent-l)}
+.prio-opt .po-body{flex:1}
+.prio-opt .po-t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.prio-opt .po-d{font-size:10px;color:var(--tx2);margin-top:2px}
+.prio-opt .po-tag{font-size:9px;font-weight:700;padding:3px 7px;border-radius:var(--r-sm)}
+.prio-opt .po-tag.crit{color:var(--crit);background:var(--crit-bg)}
+.prio-opt .po-tag.warn{color:var(--warn);background:var(--warn-bg)}
+.prio-opt .po-tag.ok{color:var(--tx2);background:var(--bg-raised)}
+.justify{margin-bottom:16px}
+.justify .jt{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-bottom:7px}
+.justify textarea{width:100%;min-height:90px;background:var(--bg-surface);border:1px solid var(--border-d);
+  border-radius:var(--r-md);padding:11px;color:var(--tx1);font-size:12px;resize:vertical;outline:none;line-height:1.5}
+.justify textarea:focus{border-color:var(--accent)}
+.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border-d);
+  border:1px solid var(--border-d);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px}
+.summary .sc{background:var(--bg-surface);padding:13px 14px}
+.summary .sc .sl{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.summary .sc .sv{font-size:13px;font-weight:700}
+.rc-actions{display:flex;gap:10px}
+
+/* ===== TOAST OT ===== */
+.toast-overlay{position:fixed;inset:0;z-index:100;background:rgba(4,8,16,.7);backdrop-filter:blur(6px);
+  display:none;place-items:center}
+.toast-overlay.show{display:grid}
+.toast{width:380px;background:var(--bg-surface);border:1px solid var(--border-b);border-radius:var(--r-xl);
+  padding:30px 28px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5);position:relative;overflow:hidden}
+.toast .check{width:62px;height:62px;border-radius:50%;background:var(--ok-bg);border:2px solid var(--ok-br);
+  display:grid;place-items:center;margin:0 auto 18px;font-size:34px;color:var(--ok);
+  animation:pop .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.toast h2{font-size:17px;font-weight:700;margin-bottom:7px}
+.toast p{font-size:12px;color:var(--tx2);margin-bottom:5px}
+.toast .ot-num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--info);margin:14px 0}
+.toast .tprog{position:absolute;bottom:0;left:0;height:3px;background:var(--accent-l)}
+
+/* row flash */
+@keyframes rowFlash{0%{background:var(--accent-m)}100%{background:transparent}}
+tr.flash{animation:rowFlash 1.4s ease}
+.hidden{display:none!important}
+
+/* ===== ML INFER (consola) ===== */
+.tc-infer{width:100%;background:var(--violet-bg);border:1px solid var(--violet-br);color:var(--violet);
+  padding:9px;border-radius:var(--r-md);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+.tc-infer:hover{background:rgba(139,92,246,.18)}
+.tc-infer i{font-size:15px}
+.ms-readout{margin-top:9px;background:var(--bg-surface);border:1px solid var(--violet-br);border-radius:var(--r-md);padding:9px 11px;font-size:11px}
+.ms-readout .big{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--violet)}
+.ms-readout .sub{color:var(--tx3);font-size:10px;margin-top:4px;display:flex;align-items:center;gap:5px}
+.ms-readout .sub i{font-size:12px}
+
+/* ===== ONBOARDING ===== */
+.ob-overlay{position:fixed;inset:0;z-index:120;background:rgba(4,8,16,.80);backdrop-filter:blur(7px);display:none;place-items:center}
+.ob-overlay.show{display:grid}
+.ob{width:520px;max-width:92vw;background:var(--bg-surface);border:1px solid var(--border-b);border-radius:var(--r-xl);
+  overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+.ob-top{height:4px;background:var(--bg-base)}
+.ob-top i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--violet));transition:width .3s}
+.ob-body{padding:32px 32px 22px;text-align:center;min-height:248px}
+.ob-ic{width:66px;height:66px;border-radius:var(--r-xl);margin:0 auto 18px;display:grid;place-items:center;font-size:33px;
+  background:var(--accent-m);border:1px solid var(--accent);color:var(--accent-l)}
+.ob-ic.violet{background:var(--violet-bg);border-color:var(--violet-br);color:var(--violet)}
+.ob-step{font-size:9px;font-weight:700;letter-spacing:.6px;color:var(--tx3);text-transform:uppercase;margin-bottom:11px}
+.ob-body h2{font-size:19px;font-weight:700;margin-bottom:11px}
+.ob-body p{font-size:13px;color:var(--tx2);line-height:1.65;max-width:410px;margin:0 auto}
+.ob-body p b{color:var(--tx1);font-weight:600}
+.ob-note{margin:15px auto 0;max-width:410px;font-size:11px;color:var(--tx2);background:var(--bg-base);
+  border:1px solid var(--warn-br);border-radius:var(--r-md);padding:10px 13px;display:flex;gap:9px;text-align:left;line-height:1.5}
+.ob-note i{color:var(--warn);font-size:16px;flex-shrink:0;margin-top:1px}
+.ob-foot{display:flex;align-items:center;gap:12px;padding:15px 22px;border-top:1px solid var(--border-s);background:var(--bg-base)}
+.ob-dots{display:flex;gap:7px}
+.ob-dots b{width:7px;height:7px;border-radius:50%;background:var(--border-b);transition:.22s}
+.ob-dots b.on{background:var(--accent-l);width:20px;border-radius:4px}
+.ob-foot .spacer{flex:1}
+.ob-skip{color:var(--tx3);font-size:12px}
+.ob-skip:hover{color:var(--tx2)}
+.ob-back{background:var(--bg-raised);border:1px solid var(--border-d);color:var(--tx2);padding:9px 14px;border-radius:var(--r-md);font-size:12px;font-weight:600}
+.ob-back:hover{background:var(--bg-hover);color:var(--tx1)}
+.ob-next{background:var(--accent);color:#fff;padding:9px 18px;border-radius:var(--r-md);font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.ob-next:hover{background:var(--accent-l)}
+.ob-next i{font-size:15px}
+.tb-help{width:28px;height:28px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--border-d);
+  display:grid;place-items:center;color:var(--tx2);font-size:16px}
+.tb-help:hover{background:var(--bg-hover);color:var(--accent-l)}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo"><i class="ti ti-satellite"></i> SATELLITE<b>·TRACK</b></div>
+  <div class="env">PROTOTIPO</div>
+  <div class="sep"></div>
+  <div class="tb-item"><i class="ti ti-building-factory-2"></i> Transporte Personal Minero</div>
+  <div class="spacer"></div>
+  <div class="tb-item"><span class="tb-dot"></span> Telemetría activa</div>
+  <div class="tb-item"><i class="ti ti-refresh"></i> Sync <span class="mono" id="lastSync">12:04:33</span></div>
+  <button class="tb-help" onclick="openOnboarding()" title="Cómo funciona"><i class="ti ti-help-circle"></i></button>
+  <div class="sep"></div>
+  <div class="tb-user"><div class="tb-avatar">JR</div><span style="font-size:11px">Centro de Control</span></div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="nav-item active" onclick="goTo('dashboard')"><i class="ti ti-layout-dashboard"></i><span>Monitoreo Flota</span></div>
+  <div class="nav-item" onclick="goTo('console')"><i class="ti ti-cpu"></i><span>Consola Prescriptiva</span></div>
+  <div class="nav-item" onclick="alert('Pantalla de Inventario ERP — pendiente (mejora futura)')"><i class="ti ti-packages"></i><span>Inventario ERP</span></div>
+  <div class="nav-item" onclick="alert('Gestión de Taller — pendiente (mejora futura)')"><i class="ti ti-tool"></i><span>Gestión Taller</span></div>
+  <div class="nav-item nav-foot" onclick="alert('Reportes Analíticos — pendiente (mejora futura)')"><i class="ti ti-chart-histogram"></i><span>Reportes</span></div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-head">
+      <h1>Monitoreo de Flota</h1>
+      <span class="sub">· Mantenimiento predictivo en tiempo real</span>
+      <div class="spacer"></div>
+      <span class="badge-ai"><i class="ti ti-brain"></i> LSTM AI</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kl"><i class="ti ti-truck"></i> Flota Total</div><div class="kv" id="kpiTotal">4</div><div class="kt">Unidades monitoreadas</div></div>
+      <div class="kpi k-crit"><div class="kl"><i class="ti ti-alert-triangle"></i> Críticos / Alerta</div><div class="kv" id="kpiCrit">2</div><div class="kt"><span class="down">▲</span> Requieren acción</div></div>
+      <div class="kpi k-ok"><div class="kl"><i class="ti ti-circle-check"></i> Disponibilidad</div><div class="kv" id="kpiDisp">87<small>%</small></div><div class="kt"><span class="up">▲</span> Flota operativa</div></div>
+      <div class="kpi k-violet"><div class="kl"><i class="ti ti-clock-bolt"></i> RUL Promedio</div><div class="kv" id="kpiRul">41<small>h</small></div><div class="kt">Vida útil restante est.</div></div>
+    </div>
+
+    <div class="grid2">
+      <!-- left: fleet table -->
+      <div class="card">
+        <div class="card-head"><i class="ti ti-list-details"></i><h3>Estado de la Flota</h3><div class="spacer"></div><span class="meta">Ordenado por prioridad</span></div>
+        <table>
+          <thead><tr><th>Unidad</th><th>Tipo</th><th>Ruta</th><th>Estado</th><th>RUL</th><th>Prio.</th><th>Acciones</th></tr></thead>
+          <tbody id="fleetBody"></tbody>
+        </table>
+      </div>
+      <!-- right column -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="card-head"><i class="ti ti-chart-bar"></i><h3>RUL por Unidad</h3><div class="spacer"></div><span class="meta">horas</span></div>
+          <div class="chart"><div class="bars" id="rulBars"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><i class="ti ti-activity-heartbeat"></i><h3>Estado de Flota</h3></div>
+          <div class="fleet-status" id="fleetStatus"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- events -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><i class="ti ti-bell-ringing"></i><h3>Eventos Prescriptivos</h3><div class="spacer"></div><span class="badge-ai"><i class="ti ti-brain"></i> LSTM AI</span></div>
+      <div class="events" id="eventsFeed"></div>
+    </div>
+  </div>
+
+  <!-- ============ CONSOLA PRESCRIPTIVA ============ -->
+  <div class="page" id="page-console">
+    <div class="page-head">
+      <button class="btn-back" onclick="goTo('dashboard')"><i class="ti ti-arrow-left"></i> Panel</button>
+      <h1>Consola Prescriptiva · <span style="color:var(--crit)">BUS-089</span></h1>
+      <div class="spacer"></div>
+      <span class="pill crit"><span class="d"></span> EN ESPERA</span>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><i class="ti ti-route"></i><h3>Flujo Prescriptivo Autónomo</h3></div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="cons-grid">
+      <!-- predictive analysis -->
+      <div class="card">
+        <div class="card-head"><i class="ti ti-brain"></i><h3>Análisis Predictivo</h3><div class="spacer"></div><span class="badge-ai"><i class="ti ti-cpu"></i> LSTM</span></div>
+        <div class="dl">
+          <div class="di"><div class="dk">Unidad</div><div class="dv mono">BUS-089</div></div>
+          <div class="di"><div class="dk">RUL estimado</div><div class="dv mono" style="color:var(--crit)">14 h</div></div>
+          <div class="di"><div class="dk">Falla proyectada</div><div class="dv">Transmisión</div></div>
+          <div class="di"><div class="dk">Códigos activos</div><div class="dv mono">P0700 · P2714</div></div>
+          <div class="di"><div class="dk">Modo de falla</div><div class="dv">Presión fluido</div></div>
+          <div class="di"><div class="dk">Ventana óptima</div><div class="dv mono">&lt; 11 h</div></div>
+        </div>
+        <div class="conf">
+          <div class="ct"><span>Confianza del modelo</span><b>94.2 %</b></div>
+          <div class="conf-bar"><i style="width:94.2%"></i></div>
+        </div>
+      </div>
+      <!-- workshop orchestration -->
+      <div class="card">
+        <div class="card-head"><i class="ti ti-tool"></i><h3>Orquestación Taller</h3><div class="spacer"></div><span class="conn-pill"><span class="d"></span> CONECTADO</span></div>
+        <div class="dl">
+          <div class="di"><div class="dk">Fosa asignada</div><div class="dv mono">FOSA N°02</div></div>
+          <div class="di"><div class="dk">Turno</div><div class="dv">Nocturno</div></div>
+          <div class="di"><div class="dk">Mecánico</div><div class="dv">Equipo B-2</div></div>
+          <div class="di"><div class="dk">Duración est.</div><div class="dv mono">3.5 h</div></div>
+        </div>
+        <div class="card-head" style="border-top:1px solid var(--border-s)"><i class="ti ti-building-warehouse"></i><h3>Orquestación Almacén</h3></div>
+        <table class="mat-table">
+          <thead><tr><th>SKU</th><th>Descripción</th><th>Cant</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">TRN-9982-MB</td><td>Módulo transmisión</td><td>1</td><td><span class="pill ok"><span class="d"></span>STOCK</span></td></tr>
+            <tr><td class="mono">KTS-4412-SEN</td><td>Kit sensores presión</td><td>2</td><td><span class="pill ok"><span class="d"></span>STOCK</span></td></tr>
+            <tr><td class="mono">LIQ-7721-GEAR</td><td>Líquido transmisión</td><td>4</td><td><span class="pill warn"><span class="d"></span>BAJO</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- protocol -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><i class="ti ti-shield-bolt"></i><h3>Protocolo de Acción Prescriptiva</h3></div>
+      <div class="alert-box"><i class="ti ti-alert-hexagon"></i><div>El modelo proyecta falla de transmisión en <b>14 horas</b>. Se recomienda ejecutar desvío a taller y reconfigurar prioridad antes de que la unidad supere la ventana óptima de intervención (&lt; 11 h).</div></div>
+      <div class="info-box"><i class="ti ti-info-circle"></i><div>Al ejecutar el desvío se generará automáticamente la Orden de Trabajo, se reservarán los materiales en almacén y se notificará al equipo de taller vía FCM.</div></div>
+      <div class="proto-actions">
+        <button class="btn primary" onclick="openReconfig('BUS-089')"><i class="ti ti-arrow-guide"></i> Ejecutar Desvío</button>
+        <button class="btn ghost" onclick="goTo('dashboard')"><i class="ti ti-x"></i> Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ RECONFIG ============ -->
+  <div class="page" id="page-reconfig">
+    <div class="page-head">
+      <button class="btn-back" onclick="goTo('console')"><i class="ti ti-arrow-left"></i> Consola</button>
+      <h1>Reconfiguración de Prioridad</h1>
+      <div class="spacer"></div>
+      <span class="badge-ai"><i class="ti ti-brain"></i> Recomendación IA</span>
+    </div>
+
+    <div class="card asset-card">
+      <div class="a-icon" id="rcIcon"><i class="ti ti-bus"></i></div>
+      <div class="a-info"><h2 id="rcId">BUS-089</h2><div class="a-sub" id="rcSub">Bus Interprov. · Lima → Trujillo</div></div>
+      <div class="a-stats">
+        <div class="a-stat"><div class="sk">RUL</div><div class="sv" id="rcRul" style="color:var(--crit)">14 h</div></div>
+        <div class="a-stat"><div class="sk">Estado</div><div class="sv" id="rcStatus" style="color:var(--crit)">CRÍTICO</div></div>
+      </div>
+    </div>
+
+    <div class="prio-opts">
+      <div class="prio-opt sel" data-p="P1" onclick="selectPrio('P1')">
+        <div class="radio"></div>
+        <div class="po-body"><div class="po-t">Prioridad 1 — Intervención inmediata</div><div class="po-d">Desvío a taller en el próximo turno. Bloquea otros despachos.</div></div>
+        <span class="po-tag crit">CRÍTICO</span>
+      </div>
+      <div class="prio-opt" data-p="P2" onclick="selectPrio('P2')">
+        <div class="radio"></div>
+        <div class="po-body"><div class="po-t">Prioridad 2 — Programada <span class="badge-ai"><i class="ti ti-brain"></i> IA</span></div><div class="po-d">Intervención dentro de 24 h, optimizando disponibilidad de fosa.</div></div>
+        <span class="po-tag warn">MODERADO</span>
+      </div>
+      <div class="prio-opt" data-p="P3" onclick="selectPrio('P3')">
+        <div class="radio"></div>
+        <div class="po-body"><div class="po-t">Prioridad 3 — Diferida</div><div class="po-d">Monitoreo continuo. Reevaluar en siguiente ciclo de telemetría.</div></div>
+        <span class="po-tag ok">BAJA</span>
+      </div>
+    </div>
+
+    <div class="justify">
+      <div class="jt"><span>Justificación del cambio</span><span><span id="charCount">0</span>/500</span></div>
+      <textarea id="justifyText" maxlength="500" oninput="updateChars()" placeholder="Sustento técnico de la reconfiguración de prioridad..."></textarea>
+    </div>
+
+    <div class="summary">
+      <div class="sc"><div class="sl">Unidad</div><div class="sv mono" id="summUnit">BUS-089</div></div>
+      <div class="sc"><div class="sl">Prioridad</div><div class="sv" id="summPrio">P1</div></div>
+      <div class="sc"><div class="sl">RUL</div><div class="sv mono" id="summRul">14 h</div></div>
+      <div class="sc"><div class="sl">Fosa</div><div class="sv mono">N°02</div></div>
+      <div class="sc"><div class="sl">Taller</div><div class="sv">Equipo B-2</div></div>
+    </div>
+
+    <div class="rc-actions">
+      <button class="btn primary" onclick="applyChange()"><i class="ti ti-check"></i> Aplicar Cambio</button>
+      <button class="btn ghost" onclick="goTo('console')"><i class="ti ti-x"></i> Cancelar</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- STATUSBAR -->
+<div class="statusbar">
+  <div class="si"><span class="tb-dot"></span> Sistema operativo</div>
+  <div class="si"><i class="ti ti-database"></i> Modelo LSTM v2.4</div>
+  <div class="si"><i class="ti ti-broadcast"></i> Telemetría: <span class="mono" id="sbCount">4</span> unidades</div>
+  <div class="spacer"></div>
+  <div class="si"><i class="ti ti-clock"></i> <span class="mono" id="sbTime">12:04:33</span></div>
+  <div class="si">SATELLITE-TRACK v2.4</div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="toggleConsole()"><i class="ti ti-terminal-2"></i> Consola Telemetría</button>
+
+<!-- TELEMETRY CONSOLE PANEL -->
+<div class="tc-panel">
+  <div class="tc-head"><i class="ti ti-terminal-2 lead"></i><h3>Consola de Telemetría</h3><button onclick="toggleConsole()"><i class="ti ti-x"></i></button></div>
+  <div class="tc-body">
+    <div class="field">
+      <label>Unidad</label>
+      <select id="tcUnit" onchange="onUnitChange()">
+        <option value="BUS-089">BUS-089</option>
+        <option value="BUS-110">BUS-110</option>
+        <option value="BUS-102">BUS-102</option>
+        <option value="CAM-045">CAM-045</option>
+        <option value="__new">Nueva unidad...</option>
+      </select>
+    </div>
+    <div class="field hidden" id="tcNewWrap">
+      <label>ID nueva unidad</label>
+      <input id="tcNewId" placeholder="BUS-XXX">
+    </div>
+    <div class="field">
+      <label>Código de error</label>
+      <div class="ec-grid" id="ecGrid"></div>
+    </div>
+    <div class="field">
+      <label>Código personalizado</label>
+      <div class="row"><input id="tcCustomCode" placeholder="Código" style="flex:0 0 38%"><input id="tcCustomDesc" placeholder="Descripción"></div>
+    </div>
+    <div class="field">
+      <label>Severidad</label>
+      <div class="sev-btns">
+        <button class="sev-btn crit" data-sev="crit" onclick="setSev('crit')">CRÍTICO</button>
+        <button class="sev-btn warn" data-sev="warn" onclick="setSev('warn')">ALERTA</button>
+        <button class="sev-btn ok" data-sev="ok" onclick="setSev('ok')">ESTABLE</button>
+      </div>
+    </div>
+    <div class="field" style="border-top:1px solid var(--border-s);padding-top:13px">
+      <label style="color:var(--violet)"><i class="ti ti-brain"></i> Señales crudas · modelo ML</label>
+      <div class="row" style="margin-bottom:8px">
+        <input type="number" id="msTemp" value="92" step="0.5" title="Temperatura del motor (°C)" placeholder="Temp °C">
+        <input type="number" id="msPres" value="4.1" step="0.1" title="Presión de aceite (bar)" placeholder="Presión bar">
+      </div>
+      <div class="row" style="margin-bottom:9px">
+        <input type="number" id="msVib" value="3.2" step="0.1" title="Vibración (mm/s)" placeholder="Vibración mm/s">
+        <input type="number" id="msHrs" value="120" step="1" title="Horas de operación (miles de km)" placeholder="Horas op.">
+      </div>
+      <button class="tc-infer" onclick="inferRUL()"><i class="ti ti-brain"></i> Inferir con el modelo</button>
+      <div class="ms-readout hidden" id="msReadout"></div>
+    </div>
+    <div class="field">
+      <label>RUL (horas) · Prioridad</label>
+      <div class="row">
+        <input type="number" id="tcRul" value="14" min="1" max="120" style="flex:0 0 50%">
+        <select id="tcPrio"><option>P1</option><option>P2</option><option>P3</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Ruta</label>
+      <input id="tcRoute" placeholder="Lima → Destino">
+    </div>
+    <button class="tc-inject" onclick="injectTelemetry()"><i class="ti ti-bolt"></i> Inyectar Señal</button>
+  </div>
+  <div class="tc-log">
+    <div class="lh"><i class="ti ti-terminal"></i> LOG DE TRANSMISIÓN<button onclick="clearLog()">limpiar</button></div>
+    <div id="logBody"></div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="ob-overlay" id="obOverlay">
+  <div class="ob">
+    <div class="ob-top"><i id="obProg" style="width:20%"></i></div>
+    <div class="ob-body" id="obBody"></div>
+    <div class="ob-foot">
+      <div class="ob-dots" id="obDots"></div>
+      <button class="ob-skip" onclick="closeOnboarding()">Saltar</button>
+      <div class="spacer"></div>
+      <button class="ob-back" id="obBack" onclick="obNav(-1)">Atrás</button>
+      <button class="ob-next" id="obNext" onclick="obNav(1)">Siguiente <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST OT -->
+<div class="toast-overlay" id="toastOverlay">
+  <div class="toast">
+    <div class="check"><i class="ti ti-check"></i></div>
+    <h2>Orden de Trabajo Generada</h2>
+    <p>El desvío fue ejecutado y la unidad reprogramada.</p>
+    <div class="ot-num" id="otNum">OT-2026-0000</div>
+    <p style="font-size:10px;color:var(--tx3)">Materiales reservados · Taller notificado vía FCM</p>
+    <div class="tprog" id="tprog"></div>
+  </div>
+</div>
+
+<script>
+/* ============ STATE ============ */
+let vehicles = [
+  {id:'BUS-089', type:'Bus Interprov.', icon:'ti-bus', route:'Lima → Trujillo',  status:'CRÍTICO', rulH:14, prio:'P1', ot:null, errors:['P0700','P2714']},
+  {id:'BUS-110', type:'Bus Interprov.', icon:'ti-bus', route:'Lima → Huancayo',  status:'ALERTA',  rulH:22, prio:'P2', ot:null, errors:['P0300']},
+  {id:'BUS-102', type:'Bus Interprov.', icon:'ti-bus', route:'Lima → Ica (T.A)', status:'ESTABLE', rulH:55, prio:'P3', ot:null, errors:[]},
+  {id:'CAM-045', type:'Camioneta Van',  icon:'ti-car', route:'Traslado Base',    status:'ESTABLE', rulH:74, prio:'P3', ot:null, errors:[]},
+];
+let extraBars = [
+  {id:'BUS-077', rulH:68, color:'#10b981'},
+  {id:'CAM-031', rulH:85, color:'#06b6d4'},
+  {id:'BUS-055', rulH:92, color:'#10b981'},
+];
+let events = [
+  {sev:'crit', icon:'ti-alert-triangle', title:'BUS-089', tag:'LSTM AI', desc:'Falla de transmisión proyectada · RUL 14h', time:'hace 2 min'},
+  {sev:'warn', icon:'ti-engine',          title:'BUS-110', tag:'LSTM AI', desc:'Degradación de encendido detectada', time:'hace 9 min'},
+  {sev:'ok',   icon:'ti-circle-check',    title:'BUS-102', tag:null,      desc:'Telemetría dentro de parámetros', time:'hace 14 min'},
+  {sev:'info', icon:'ti-bell',            title:'Sistema', tag:null,      desc:'Sincronización de flota completada', time:'hace 18 min'},
+];
+let reconfigId = 'BUS-089';
+let selectedSev = 'crit';
+let consoleOpen = false;
+let selectedEcCode = null;
+
+const errorCodes = [
+  {code:'P0700', desc:'Sistema Transmisión',   sev:'crit'},
+  {code:'P2714', desc:'Presión Fluido Trans.', sev:'crit'},
+  {code:'P0300', desc:'Falla Encendido Mult.', sev:'warn'},
+  {code:'P0190', desc:'Sensor Presión Comb.',  sev:'warn'},
+  {code:'U0100', desc:'Pérdida Comun. ECU',    sev:'crit'},
+  {code:'P0420', desc:'Rendimiento Catalizad.',sev:'warn'},
+  {code:'P0116', desc:'Temp. Refrigerante',    sev:'warn'},
+  {code:'C0035', desc:'Sensor Vel. Rueda FL',  sev:'crit'},
+];
+
+const prioOrder = {P1:0, P2:1, P3:2};
+const statusClass = {'CRÍTICO':'crit','ALERTA':'warn','ESTABLE':'ok','PROGRAMADO':'info'};
+
+/* ============ ML: MODELO BASE DE REGRESIÓN (datos sintéticos) ============
+   Regresión lineal múltiple entrenada en el navegador al cargar la página.
+   Features: temperatura, presión, vibración, horas de operación, # códigos activos.
+   Salida: RUL estimado (h) + banda de incertidumbre + confianza.
+   Exploratorio: demuestra el concepto. Evolución futura = LSTM con datos reales.        */
+const ML = (function(){
+  const FEAT = ['temp','pressure','vibration','opHours','errCount'];
+  let beta=null, mean=[], std=[], rmse=0, nTrain=0, trained=false;
+  const rnd = s => (Math.random()*2-1)*s;            // ruido uniforme ±s
+  const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+  const dev = (a,m) => Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length);
+  const dot = (a,b) => a.reduce((s,v,i)=>s+v*b[i],0);
+
+  // genera datos sintéticos de degradación (relación conocida + ruido)
+  function genData(n){
+    const X=[], y=[];
+    for(let i=0;i<n;i++){
+      const opH  = Math.random()*200;                // miles de km recorridos
+      const temp = 80 + opH*0.05 + rnd(6);           // °C: sube con el desgaste
+      const vib  = 1.5 + opH*0.02 + rnd(0.8);        // mm/s: sube con el desgaste
+      const pres = 5 - opH*0.008 + rnd(0.5);         // bar: baja con el desgaste
+      const errC = Math.max(0, Math.round(opH/60 + rnd(1.2)));
+      let rul = 120 - 0.42*opH - 1.1*(temp-80) - 7*(vib-1.5) - 9*(5-pres) - 11*errC + rnd(6);
+      rul = Math.max(2, Math.min(120, rul));
+      X.push([temp,pres,vib,opH,errC]); y.push(rul);
+    }
+    return {X,y};
+  }
+
+  // resuelve A·x = b por Gauss-Jordan con pivoteo parcial
+  function solve(A,b){
+    const n=A.length, M=A.map((r,i)=>[...r,b[i]]);
+    for(let c=0;c<n;c++){
+      let piv=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
+      [M[c],M[piv]]=[M[piv],M[c]];
+      const d=M[c][c]||1e-9;
+      for(let k=c;k<=n;k++) M[c][k]/=d;
+      for(let r=0;r<n;r++) if(r!==c){ const f=M[r][c]; for(let k=c;k<=n;k++) M[r][k]-=f*M[c][k]; }
+    }
+    return M.map(r=>r[n]);
+  }
+
+  function fit(){
+    const {X,y}=genData(220); nTrain=X.length;
+    mean=FEAT.map((_,j)=>avg(X.map(r=>r[j])));
+    std =FEAT.map((_,j)=>dev(X.map(r=>r[j]),mean[j])||1);
+    const Z=X.map(r=>[1,...r.map((v,j)=>(v-mean[j])/std[j])]);  // estandarizado + intercepto
+    const p=Z[0].length, A=Array.from({length:p},()=>Array(p).fill(0)), bb=Array(p).fill(0);
+    for(let i=0;i<Z.length;i++) for(let a=0;a<p;a++){ bb[a]+=Z[i][a]*y[i]; for(let c=0;c<p;c++) A[a][c]+=Z[i][a]*Z[i][c]; }
+    beta=solve(A,bb);
+    let se=0; for(let i=0;i<Z.length;i++) se+=(dot(Z[i],beta)-y[i])**2;
+    rmse=Math.sqrt(se/Z.length); trained=true;
+    return {n:nTrain, rmse:rmse.toFixed(1)};
+  }
+
+  function predict(feat){
+    if(!trained) fit();
+    const z=[1,...FEAT.map((k,j)=>((+feat[k]||0)-mean[j])/std[j])];
+    let rul=Math.max(2, Math.min(120, Math.round(dot(z,beta))));
+    const band=Math.max(2, Math.round(1.96*rmse));
+    const conf=Math.max(55, Math.min(96, Math.round(100*(1-band/(rul+band)))));
+    return {rul, band, conf};
+  }
+  return {fit, predict, info:()=>({rmse:rmse.toFixed(1), n:nTrain})};
+})();
+let lastPred=null;
+
+/* ============ NAV ============ */
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const map={dashboard:0,console:1};
+  if(map[page]!==undefined) document.querySelectorAll('.nav-item')[map[page]].classList.add('active');
+  if(page==='console') renderTimeline();
+  document.querySelector('.main').scrollTop=0;
+}
+
+/* ============ RUL HELPERS ============ */
+function rulColor(h, hasOT){
+  if(hasOT)  return 'var(--info)';
+  if(h < 20) return 'var(--crit)';
+  if(h < 40) return 'var(--warn)';
+  return 'var(--ok)';
+}
+function rulPct(h){ return Math.min(Math.round((h/120)*100),100); }
+
+/* ============ RENDER FLEET ============ */
+function renderFleet(flashId){
+  vehicles.sort((a,b)=> prioOrder[a.prio]-prioOrder[b.prio] || a.rulH-b.rulH);
+  const body = document.getElementById('fleetBody');
+  body.innerHTML = vehicles.map(v=>{
+    const sc = statusClass[v.status];
+    const rowCls = v.status==='CRÍTICO'?'crit':(v.status==='ALERTA'?'warn':'');
+    const errBadge = v.ot ? `<span class="err ot">${v.ot.split('-').slice(-1)}</span>`
+                   : (v.errors.length? `<span class="err">${v.errors.length} ERR</span>`:'');
+    const canSee = v.id==='BUS-089' && !v.ot;
+    return `<tr class="${rowCls} ${v.id===flashId?'flash':''}">
+      <td><div class="veh-id"><div class="veh-icon"><i class="ti ${v.icon}"></i></div><div><span class="id">${v.id}</span> ${errBadge}</div></div></td>
+      <td style="color:var(--tx2)">${v.type}</td>
+      <td style="color:var(--tx2)">${v.route}</td>
+      <td><span class="pill ${sc}"><span class="d"></span>${v.status}</span></td>
+      <td><div class="rul-cell"><span class="h mono" style="color:${rulColor(v.rulH,!!v.ot)}">${v.rulH}h</span>
+        <div class="rul-bar"><i style="width:${rulPct(v.rulH)}%;background:${rulColor(v.rulH,!!v.ot)}"></i></div></div></td>
+      <td><span class="prio ${v.prio}">${v.prio}</span></td>
+      <td><div class="act-btns">
+        <button class="see" ${canSee?'':'disabled'} onclick="goTo('console')" title="Ver consola"><i class="ti ti-eye"></i></button>
+        <button onclick="openReconfig('${v.id}')" title="Reconfigurar"><i class="ti ti-adjustments"></i></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ============ RENDER CHART ============ */
+function renderChart(){
+  const all = [...vehicles.map(v=>({id:v.id, rulH:v.rulH, color:rulColorHex(v.rulH,!!v.ot)})), ...extraBars]
+    .sort((a,b)=>a.rulH-b.rulH);
+  document.getElementById('rulBars').innerHTML = all.map(v=>`
+    <div class="bar-col"><span class="bv mono">${v.rulH}</span>
+      <div class="bar" style="height:${rulPct(v.rulH)}%;background:${v.color}"></div>
+      <span class="bl">${v.id}</span></div>`).join('');
+}
+function rulColorHex(h, hasOT){
+  if(hasOT)  return '#06b6d4';
+  if(h<20)   return '#f43f5e';
+  if(h<40)   return '#f59e0b';
+  return '#10b981';
+}
+
+/* ============ RENDER FLEET STATUS ============ */
+function renderFleetStatus(){
+  const total = vehicles.length;
+  const buckets = [
+    {l:'Crítico', n:vehicles.filter(v=>v.status==='CRÍTICO').length, c:'var(--crit)'},
+    {l:'Alerta',  n:vehicles.filter(v=>v.status==='ALERTA').length,  c:'var(--warn)'},
+    {l:'Estable', n:vehicles.filter(v=>v.status==='ESTABLE').length, c:'var(--ok)'},
+    {l:'Programado', n:vehicles.filter(v=>v.status==='PROGRAMADO').length, c:'var(--info)'},
+  ];
+  document.getElementById('fleetStatus').innerHTML = buckets.map(b=>`
+    <div class="fs-row"><div class="fs-top"><span style="color:var(--tx2)">${b.l}</span><b>${b.n}</b></div>
+      <div class="fs-bar"><i style="width:${total?Math.round(b.n/total*100):0}%;background:${b.c}"></i></div></div>`).join('');
+}
+
+/* ============ RENDER EVENTS ============ */
+function renderEvents(){
+  document.getElementById('eventsFeed').innerHTML = events.slice(0,8).map(e=>`
+    <div class="ev ${e.sev}"><div class="ev-ic"><i class="ti ${e.icon}"></i></div>
+      <div class="ev-body"><div class="ev-t">${e.title} ${e.tag?`<span class="badge-ai"><i class="ti ti-brain"></i> ${e.tag}</span>`:''}</div>
+        <div class="ev-d">${e.desc}</div><div class="ev-time">${e.time}</div></div></div>`).join('');
+}
+
+/* ============ KPIs ============ */
+function updateKPIs(){
+  const total = vehicles.length;
+  const crit = vehicles.filter(v=>v.status==='CRÍTICO'||v.status==='ALERTA').length;
+  const operativos = vehicles.filter(v=>v.status!=='CRÍTICO').length;
+  const avg = Math.round(vehicles.reduce((s,v)=>s+v.rulH,0)/total);
+  document.getElementById('kpiTotal').textContent = total;
+  document.getElementById('kpiCrit').textContent = crit;
+  document.getElementById('kpiDisp').innerHTML = Math.round(operativos/total*100)+'<small>%</small>';
+  document.getElementById('kpiRul').innerHTML = avg+'<small>h</small>';
+  document.getElementById('sbCount').textContent = total;
+  document.getElementById('sbCount2') && (document.getElementById('sbCount2').textContent = total);
+}
+
+/* ============ TIMELINE ============ */
+const tlSteps = ['Telemetría','Detección','Predicción LSTM','Diagnóstico','Orquestación','Notificación','Ejecución'];
+function renderTimeline(){
+  document.getElementById('timeline').innerHTML = tlSteps.map((s,i)=>{
+    const cls = i<4?'done':(i===4?'active':'');
+    const ic = i<4?'<i class="ti ti-check"></i>':(i===4?'':(i+1));
+    return `<div class="tl-step ${cls}"><div class="tl-dot">${ic}</div><div class="tl-l">${s}</div></div>`;
+  }).join('');
+}
+
+/* ============ TELEMETRY CONSOLE ============ */
+function toggleConsole(){
+  consoleOpen = !consoleOpen;
+  document.body.classList.toggle('console-open', consoleOpen);
+}
+function renderErrorCodes(){
+  document.getElementById('ecGrid').innerHTML = errorCodes.map(e=>`
+    <button class="ec ${e.sev}" data-code="${e.code}" onclick="toggleEc('${e.code}','${e.sev}')">
+      <div class="c"><span class="dot"></span>${e.code}</div><div class="dsc">${e.desc}</div></button>`).join('');
+}
+function toggleEc(code, sev){
+  document.querySelectorAll('.ec').forEach(el=>el.classList.toggle('sel', el.dataset.code===code && selectedEcCode!==code));
+  selectedEcCode = (selectedEcCode===code)?null:code;
+  if(selectedEcCode){ setSev(sev); }
+}
+function setSev(sev, adjust=true){
+  selectedSev = sev;
+  document.querySelectorAll('.sev-btn').forEach(b=>b.classList.toggle('on', b.dataset.sev===sev));
+  if(adjust){ // auto-ajusta RUL y prioridad sugeridos (modo manual)
+    const rulIn = document.getElementById('tcRul'), prioIn = document.getElementById('tcPrio');
+    if(sev==='crit'){ rulIn.value=14; prioIn.value='P1'; }
+    else if(sev==='warn'){ rulIn.value=30; prioIn.value='P2'; }
+    else { rulIn.value=70; prioIn.value='P3'; }
+  }
+}
+
+/* ============ INFERENCIA ML ============ */
+function inferRUL(){
+  const feat = {
+    temp:      +document.getElementById('msTemp').value || 0,
+    pressure:  +document.getElementById('msPres').value || 0,
+    vibration: +document.getElementById('msVib').value  || 0,
+    opHours:   +document.getElementById('msHrs').value  || 0,
+    errCount:  (selectedEcCode?1:0) + (document.getElementById('tcCustomCode').value.trim()?1:0),
+  };
+  const pr = ML.predict(feat);
+  lastPred = pr;
+  const sev = pr.rul<20 ? 'crit' : (pr.rul<40 ? 'warn' : 'ok');
+  setSev(sev, false);                                     // marca severidad sin pisar el RUL
+  document.getElementById('tcRul').value  = pr.rul;
+  document.getElementById('tcPrio').value = pr.rul<20 ? 'P1' : (pr.rul<40 ? 'P2' : 'P3');
+  const ro = document.getElementById('msReadout');
+  ro.classList.remove('hidden');
+  ro.innerHTML = `<div><span class="big">${pr.rul} h</span>
+      <span style="color:var(--tx2)"> &plusmn; ${pr.band} h &middot; confianza ${pr.conf}%</span></div>
+    <div class="sub"><i class="ti ti-flask"></i> Modelo base · RMSE ${ML.info().rmse} h sobre ${ML.info().n} muestras sintéticas</div>`;
+  addLog('warn', `MODEL infer -> RUL=${pr.rul}h band=±${pr.band}h conf=${pr.conf}%`);
+}
+function onUnitChange(){
+  document.getElementById('tcNewWrap').classList.toggle('hidden', document.getElementById('tcUnit').value!=='__new');
+}
+function injectTelemetry(){
+  let unitId = document.getElementById('tcUnit').value;
+  if(unitId==='__new'){
+    unitId = (document.getElementById('tcNewId').value||'').trim().toUpperCase();
+    if(!unitId){ addLog('err','ERROR: ID de unidad requerido'); return; }
+  }
+  const code = selectedEcCode || document.getElementById('tcCustomCode').value.trim().toUpperCase();
+  const desc = (errorCodes.find(e=>e.code===code)||{}).desc || document.getElementById('tcCustomDesc').value.trim() || 'Código personalizado';
+  const rul = parseInt(document.getElementById('tcRul').value)||14;
+  const prio = document.getElementById('tcPrio').value;
+  const route = document.getElementById('tcRoute').value.trim();
+  const sevMap = {crit:'CRÍTICO',warn:'ALERTA',ok:'ESTABLE'};
+  const status = sevMap[selectedSev];
+
+  addLog('sys', `>> Recibiendo señal de ${unitId}...`);
+  addLog('in', `RX ${code||'---'} | RUL=${rul}h | SEV=${selectedSev.toUpperCase()}`);
+
+  let v = vehicles.find(x=>x.id===unitId);
+  if(v){
+    v.status=status; v.rulH=rul; v.prio=prio; if(route) v.route=route;
+    if(code && !v.errors.includes(code)) v.errors.push(code);
+    addLog('warn', `UPDATE ${unitId} -> ${status}`);
+  }else{
+    v = {id:unitId, type:'Unidad', icon:unitId.startsWith('CAM')?'ti-car':'ti-bus', route:route||'Sin ruta', status, rulH:rul, prio, ot:null, errors:code?[code]:[]};
+    vehicles.push(v);
+    addLog('in', `NEW UNIT ${unitId} registrada`);
+  }
+
+  // nuevo evento
+  const sevIcon = {crit:'ti-alert-triangle',warn:'ti-engine',ok:'ti-circle-check'}[selectedSev];
+  const byModel = lastPred && lastPred.rul===rul;        // ¿el RUL viene del modelo?
+  if(byModel) v.conf = lastPred.conf;
+  events.unshift({sev:selectedSev, icon:sevIcon, title:unitId,
+    tag: byModel ? 'ML base' : (selectedSev!=='ok' ? 'LSTM AI' : null),
+    desc: `${desc} · RUL ${rul}h${byModel?` (conf ${lastPred.conf}%)`:''}`, time:'ahora'});
+  if(events.length>8) events.pop();
+
+  renderFleet(unitId); renderChart(); renderFleetStatus(); renderEvents(); updateKPIs();
+  const t = nowStr();
+  document.getElementById('lastSync').textContent = t;
+  document.getElementById('sbTime').textContent = t;
+  addLog('sys', `<< Dashboard actualizado @ ${t}`);
+}
+function addLog(cls, text){
+  const line = document.createElement('div');
+  line.className = 'log-line '+cls;
+  line.innerHTML = `<span class="ts">${nowStr()}</span>${text}`;
+  const body = document.getElementById('logBody');
+  body.appendChild(line);
+  body.parentElement.scrollTop = body.parentElement.scrollHeight;
+}
+function clearLog(){ document.getElementById('logBody').innerHTML=''; }
+function nowStr(){ const d=new Date(); return d.toTimeString().slice(0,8); }
+
+/* ============ RECONFIG ============ */
+function openReconfig(vehicleId){
+  reconfigId = vehicleId;
+  const v = vehicles.find(x=>x.id===vehicleId) || vehicles[0];
+  document.getElementById('rcIcon').innerHTML = `<i class="ti ${v.icon}"></i>`;
+  document.getElementById('rcId').textContent = v.id;
+  document.getElementById('rcSub').textContent = `${v.type} · ${v.route}`;
+  document.getElementById('rcRul').textContent = v.rulH+' h';
+  document.getElementById('rcRul').style.color = rulColor(v.rulH,!!v.ot);
+  document.getElementById('rcStatus').textContent = v.status;
+  document.getElementById('rcStatus').style.color = `var(--${statusClass[v.status]})`;
+  document.getElementById('summUnit').textContent = v.id;
+  document.getElementById('summRul').textContent = v.rulH+' h';
+  selectPrio(v.prio);
+  document.getElementById('justifyText').value=''; updateChars();
+  goTo('reconfig');
+}
+function selectPrio(p){
+  document.querySelectorAll('.prio-opt').forEach(o=>o.classList.toggle('sel', o.dataset.p===p));
+  document.getElementById('summPrio').textContent = p;
+}
+function updateChars(){ document.getElementById('charCount').textContent = document.getElementById('justifyText').value.length; }
+function applyChange(){
+  if(document.getElementById('justifyText').value.trim().length < 10){
+    alert('Ingrese una justificación de al menos 10 caracteres.');
+    return;
+  }
+  showToast();
+}
+
+/* ============ TOAST OT ============ */
+function showToast(){
+  const otNum = 'OT-2026-' + Math.floor(Math.random()*9000+1000);
+  document.getElementById('otNum').textContent = otNum;
+  const ov = document.getElementById('toastOverlay');
+  ov.classList.add('show');
+  const prog = document.getElementById('tprog');
+  prog.style.transition='none'; prog.style.width='0%';
+  requestAnimationFrame(()=>{ prog.style.transition='width 3.1s linear'; prog.style.width='100%'; });
+  setTimeout(()=>{
+    ov.classList.remove('show');
+    const v = vehicles.find(x=>x.id===reconfigId);
+    if(v){
+      v.ot = otNum; v.status='PROGRAMADO';
+      v.rulH = Math.max(v.rulH, 100); // barra llena cyan
+    }
+    events.unshift({sev:'info', icon:'ti-clipboard-check', title:reconfigId, tag:null,
+      desc:`${otNum} generada · unidad reprogramada`, time:'ahora'});
+    if(events.length>8) events.pop();
+    renderFleet(); renderChart(); renderFleetStatus(); renderEvents(); updateKPIs();
+    goTo('dashboard');
+  }, 3400);
+}
+
+/* ============ ONBOARDING ============ */
+const obSlides=[
+  {ic:'ti-satellite', v:false, t:'Bienvenido a SATELLITE-TRACK',
+   p:'Plataforma que <b>automatiza el proceso</b> de mantenimiento predictivo de la flota de transporte de personal minero. Lo que ves es una <b>maqueta funcional</b> de demostración.'},
+  {ic:'ti-layout-dashboard', v:false, t:'Monitoreo de la flota',
+   p:'El Dashboard concentra cada unidad con su <b>RUL</b> (vida útil restante, en horas), su estado y su prioridad, y se actualiza en tiempo real conforme llegan señales.'},
+  {ic:'ti-route', v:false, t:'Flujo prescriptivo automático',
+   p:'De la telemetría a la acción: el sistema detecta el riesgo, abre la <b>Consola Prescriptiva</b>, sugiere el desvío a taller y genera la <b>Orden de Trabajo</b> sin intervención manual.'},
+  {ic:'ti-brain', v:true, t:'El modelo de Machine Learning',
+   p:'En la <b>Consola de Telemetría</b> ingresas señales crudas de sensores (temperatura, presión, vibración, horas de operación) y un modelo de <b>regresión entrenado en el navegador</b> infiere automáticamente el RUL, la prioridad y una confianza.',
+   note:'Es un modelo exploratorio entrenado con datos sintéticos: demuestra el concepto. La evolución futura es un LSTM con secuencias reales de sensores.'},
+  {ic:'ti-terminal-2', v:true, t:'Pruébalo tú mismo',
+   p:'Abre la <b>Consola Telemetría</b> (botón inferior derecho), carga las señales de una unidad y pulsa <b>Inferir con el modelo</b>. Verás el dashboard reaccionar al instante. Puedes volver a esta guía con el botón <b>?</b> de la barra superior.'},
+];
+let obIdx=0;
+function renderOb(){
+  const s=obSlides[obIdx];
+  document.getElementById('obBody').innerHTML=`
+    <div class="ob-ic ${s.v?'violet':''}"><i class="ti ${s.ic}"></i></div>
+    <div class="ob-step">Paso ${obIdx+1} de ${obSlides.length}</div>
+    <h2>${s.t}</h2><p>${s.p}</p>
+    ${s.note?`<div class="ob-note"><i class="ti ti-flask"></i><div>${s.note}</div></div>`:''}`;
+  document.getElementById('obProg').style.width=((obIdx+1)/obSlides.length*100)+'%';
+  document.getElementById('obDots').innerHTML=obSlides.map((_,i)=>`<b class="${i===obIdx?'on':''}"></b>`).join('');
+  document.getElementById('obBack').style.visibility=obIdx===0?'hidden':'visible';
+  document.getElementById('obNext').innerHTML=(obIdx===obSlides.length-1)
+    ?'Empezar <i class="ti ti-check"></i>':'Siguiente <i class="ti ti-arrow-right"></i>';
+}
+function obNav(d){
+  if(obIdx+d>=obSlides.length){ closeOnboarding(); return; }
+  obIdx=Math.max(0,Math.min(obSlides.length-1,obIdx+d));
+  renderOb();
+}
+function openOnboarding(){ obIdx=0; renderOb(); document.getElementById('obOverlay').classList.add('show'); }
+function closeOnboarding(){
+  document.getElementById('obOverlay').classList.remove('show');
+  try{ localStorage.setItem('st_onboarded','1'); }catch(e){}
+}
+function maybeOnboard(){
+  let seen=false; try{ seen=localStorage.getItem('st_onboarded')==='1'; }catch(e){}
+  if(!seen) openOnboarding();
+}
+
+/* ============ INIT ============ */
+function init(){
+  const m = ML.fit();                                    // entrena el modelo al cargar
+  renderFleet(); renderChart(); renderFleetStatus(); renderEvents(); updateKPIs();
+  renderErrorCodes(); setSev('crit');
+  addLog('sys','SATELLITE-TRACK · consola lista');
+  addLog('sys',`Modelo base entrenado · ${m.n} muestras · RMSE ${m.rmse}h`);
+  addLog('sys','Esperando señales de telemetría...');
+  setInterval(()=>{ document.getElementById('sbTime').textContent = nowStr(); }, 1000);
+  maybeOnboard();                                        // onboarding en el primer ingreso
+}
+init();
+</script>
+</body>
+</html>

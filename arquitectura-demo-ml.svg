@@ -1,0 +1,59 @@
+<svg width="680" viewBox="0 0 680 500" role="img" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+<title>Arquitectura preliminar del demo de ML dentro de la maqueta SATELLITE-TRACK</title>
+<desc>Flujo vertical: la consola de telemetria entrega senales crudas, un modelo de regresion entrenado en el navegador infiere RUL y una banda de confianza, reglas de umbral derivan estado y prioridad, y el dashboard se actualiza. Un panel lateral marca la exploracion futura con LSTM, microservicio y datos reales.</desc>
+<rect x="0" y="0" width="680" height="500" fill="#ffffff"/>
+<defs>
+<marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/></marker>
+<marker id="ahd" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/></marker>
+</defs>
+
+<text x="40" y="28" font-size="15" font-weight="700" fill="#0f172a">Demo de ML basico dentro de la maqueta (corre en el navegador)</text>
+
+<!-- legend -->
+<rect x="40" y="42" width="12" height="12" rx="2" fill="#dbeafe" stroke="#2563eb"/>
+<text x="58" y="52" font-size="12" fill="#334155">Nuevo en el demo</text>
+<rect x="200" y="42" width="12" height="12" rx="2" fill="#eef2f7" stroke="#94a3b8"/>
+<text x="218" y="52" font-size="12" fill="#334155">Maqueta existente</text>
+<rect x="350" y="42" width="12" height="12" rx="2" fill="none" stroke="#94a3b8" stroke-dasharray="4 3"/>
+<text x="368" y="52" font-size="12" fill="#334155">Exploracion futura</text>
+
+<!-- pipeline -->
+<rect x="70" y="70" width="320" height="50" rx="8" fill="#eef2f7" stroke="#94a3b8"/>
+<text x="230" y="91" font-size="14" font-weight="700" fill="#1e293b" text-anchor="middle">Consola de Telemetria</text>
+<text x="230" y="109" font-size="12" fill="#475569" text-anchor="middle">senales crudas: temp, presion, vibracion...</text>
+
+<rect x="70" y="140" width="320" height="50" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="230" y="161" font-size="14" font-weight="700" fill="#1e3a8a" text-anchor="middle">Extraccion de features</text>
+<text x="230" y="179" font-size="12" fill="#1e40af" text-anchor="middle">normalizacion de las senales</text>
+
+<rect x="70" y="210" width="320" height="50" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="230" y="231" font-size="14" font-weight="700" fill="#1e3a8a" text-anchor="middle">Modelo de regresion</text>
+<text x="230" y="249" font-size="12" fill="#1e40af" text-anchor="middle">entrenado con datos sinteticos al cargar</text>
+
+<rect x="70" y="280" width="320" height="50" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="230" y="301" font-size="14" font-weight="700" fill="#1e3a8a" text-anchor="middle">RUL + banda de confianza</text>
+<text x="230" y="319" font-size="12" fill="#1e40af" text-anchor="middle">horas restantes +/- incertidumbre</text>
+
+<rect x="70" y="350" width="320" height="50" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+<text x="230" y="371" font-size="14" font-weight="700" fill="#1e3a8a" text-anchor="middle">Reglas de decision</text>
+<text x="230" y="389" font-size="12" fill="#1e40af" text-anchor="middle">umbrales -&gt; estado y prioridad</text>
+
+<rect x="70" y="420" width="320" height="50" rx="8" fill="#eef2f7" stroke="#94a3b8"/>
+<text x="230" y="441" font-size="14" font-weight="700" fill="#1e293b" text-anchor="middle">Dashboard auto-actualizado</text>
+<text x="230" y="459" font-size="12" fill="#475569" text-anchor="middle">KPIs, tabla, grafico, evento, OT</text>
+
+<!-- arrows -->
+<line x1="230" y1="122" x2="230" y2="137" stroke="#64748b" stroke-width="1.6" marker-end="url(#ah)"/>
+<line x1="230" y1="192" x2="230" y2="207" stroke="#64748b" stroke-width="1.6" marker-end="url(#ah)"/>
+<line x1="230" y1="262" x2="230" y2="277" stroke="#64748b" stroke-width="1.6" marker-end="url(#ah)"/>
+<line x1="230" y1="332" x2="230" y2="347" stroke="#64748b" stroke-width="1.6" marker-end="url(#ah)"/>
+<line x1="230" y1="402" x2="230" y2="417" stroke="#64748b" stroke-width="1.6" marker-end="url(#ah)"/>
+
+<!-- future panel -->
+<rect x="430" y="208" width="210" height="124" rx="8" fill="none" stroke="#94a3b8" stroke-dasharray="5 4"/>
+<text x="535" y="234" font-size="14" font-weight="700" fill="#334155" text-anchor="middle">Exploracion futura</text>
+<text x="535" y="262" font-size="12" fill="#475569" text-anchor="middle">LSTM con secuencias reales</text>
+<text x="535" y="286" font-size="12" fill="#475569" text-anchor="middle">Microservicio FastAPI</text>
+<text x="535" y="310" font-size="12" fill="#475569" text-anchor="middle">Datos reales de sensores</text>
+<line x1="390" y1="235" x2="428" y2="235" stroke="#94a3b8" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#ahd)"/>
+</svg>
